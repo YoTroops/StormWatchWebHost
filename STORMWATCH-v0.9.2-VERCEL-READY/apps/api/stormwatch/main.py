@@ -121,19 +121,21 @@ async def lifespan(app: FastAPI):
             try:await task
             except asyncio.CancelledError:pass
 
-app = FastAPI(title='STORMWATCH API', version='0.9.7', lifespan=lifespan,
+app = FastAPI(title='STORMWATCH API', version='0.9.8', lifespan=lifespan,
               description='Research visualization only. Refer to official NHC/NWS advisories for decisions.')
 
 from .briefing import daily_brief
 
 @app.get('/api/news/daily')
 async def news_daily():
-    return JSONResponse(await daily_brief(), headers={'Cache-Control':'public, max-age=900, s-maxage=3600'})
+    data = await daily_brief()
+    cache_policy = 'public, max-age=300, s-maxage=900' if data['headlines'] else 'no-store'
+    return JSONResponse(data, headers={'Cache-Control': cache_policy})
 
 @app.get('/api/health')
 async def health():
     return {'service':'STORMWATCH','status':'ok','utc':datetime.now(timezone.utc).isoformat(),
-      'network_probe':'not performed','version':'0.9.7','providers':provider.health,'poller':poll_state,'websocket_listeners':len(subscribers)}
+      'network_probe':'not performed','version':'0.9.8','providers':provider.health,'poller':poll_state,'websocket_listeners':len(subscribers)}
 
 @app.get('/api/storms/live')
 async def live():
