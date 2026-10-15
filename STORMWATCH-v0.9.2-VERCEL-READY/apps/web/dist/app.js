@@ -8,7 +8,7 @@ const state = {
   mappedSat:null,mappedSatImage:null,mappedSatLoading:false,mappedSatPending:false,mappedSatOpacity:.70,
   coasts:[],lands:[],storms:[],archives:[],selected:null,archive:null,live:null,
   recon:null,uas:null,forecast:null,models:null,modelsStorm:null,modelsLoading:false,modelsSerial:0,selectedModels:new Set(["nhc","hafsa","hafsb","gfs","ecmwf","google","aifs"]),modelMetric:"wind_kt",step:0,playing:false,playTimer:null,
-  activePoints:[],hover:null,drawHits:[],sourceError:null,refreshInProgress:false,satellite:null,satelliteLoading:false,satellitePending:false,radar:null,radarImage:null,radarLoading:false,radarPending:false,radarOpacity:.66,radarRegion:"gulf",reconStatus:null,aircraft:null,aircraftLoading:false,tealAircraft:[],tealLoading:false
+  activePoints:[],hover:null,drawHits:[],sourceError:null,refreshInProgress:false,satellite:null,satelliteLoading:false,satellitePending:false,radar:null,radarImage:null,radarLoading:false,radarPending:false,radarOpacity:.66,radarRegion:"conus",reconStatus:null,aircraft:null,aircraftLoading:false,tealAircraft:[],tealLoading:false
 };
 let toastTimeout=null;
 const canvas=$('earthCanvas'),ctx=canvas.getContext('2d');

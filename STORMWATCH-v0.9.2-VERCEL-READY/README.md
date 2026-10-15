@@ -195,3 +195,11 @@ This patch corrects the request geometry based on Esri's documented export behav
 The first time you launch each STORMWATCH version in a browser, a **What's New** popup shows the currently installed version, its changes, and expandable release history. Dismissing it records the version in that browser's local storage, so it will not appear on each page refresh. You can reopen it at any time using the **WHAT'S NEW v0.9.1** button in the header.
 
 The popup works without NOAA connectivity and needs no API key. If your browser clears or restricts local storage, it may open on each visit. Release history is packaged locally and is not an internet-based software updater. See `docs/CHANGELOG_v0.9.1.md`.
+
+
+## v0.9.9 — Support STORMWATCH and NWS radar region default
+
+- **Support STORMWATCH** links directly to the owner's [Buy Me a Coffee page](https://buymeacoffee.com/stormwatchsite?new=1). The dashboard desktop header, dedicated mobile bottom navigation, About page, and Tropical Briefing page offer direct external links. Donations are handled by Buy Me a Coffee; the STORMWATCH backend does not process payments.
+- The **NWS Radar** region selector now starts on **Continental US** (`conus`) in both the browser and the radar image API's default query parameter. The original Gulf, Southeast and Caribbean selections remain available.
+- Geographic radar raster bounds and the existing EPSG:4326 → map projection mapping were not changed. Selecting CONUS does not automatically recenter the whole map.
+- Includes the original Python/Vercel deployment files.

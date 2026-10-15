@@ -12,8 +12,8 @@ def test_mobile_assets_embedded_and_loaded():
     css=(WEB/'mobile.css').read_text()
     js=(WEB/'mobile.js').read_text()
     assert '<meta name="viewport" content="width=device-width,initial-scale=1"/>' in page
-    assert '/static/mobile.css?v=093' in page
-    assert '/static/mobile.js?v=093' in page
+    assert '/static/mobile.css?v=099' in page
+    assert '/static/mobile.js?v=099' in page
     assert '.mobile-nav-button' in page
     assert css in page
     assert "document.createElement('nav')" in js
@@ -37,4 +37,4 @@ def test_static_assets_served_by_backend():
             result=client.get('/static/'+asset)
             assert result.status_code==200
             assert len(result.content)>1000
-        assert client.get('/api/health').json()['version']=='0.9.8'
+        assert client.get('/api/health').json()['version']=='0.9.9'

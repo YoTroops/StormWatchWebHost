@@ -69,12 +69,12 @@
   #timelineRange { min-width:0; }
   .mobile-scrim { position:fixed; z-index:21; inset:54px 0 calc(65px + env(safe-area-inset-bottom,0px)); background:rgba(2,9,18,.65); }
   body.mobile-sheet-open .mobile-scrim { display:block; }
-  .mobile-nav { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); position:fixed; z-index:30; bottom:0; left:0; right:0; height:calc(65px + env(safe-area-inset-bottom,0px)); padding:5px 4px calc(5px + env(safe-area-inset-bottom,0px)); border-top:1px solid #36566c; background:#0b1928; box-shadow:0 -5px 20px #0005; }
+  .mobile-nav { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); position:fixed; z-index:30; bottom:0; left:0; right:0; height:calc(65px + env(safe-area-inset-bottom,0px)); padding:5px 4px calc(5px + env(safe-area-inset-bottom,0px)); border-top:1px solid #36566c; background:#0b1928; box-shadow:0 -5px 20px #0005; }
   .mobile-nav-button { min-width:0; min-height:49px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:1px solid transparent; border-radius:7px; background:none; color:#93aebf; padding:5px 0; font:700 9px/1.1 'IBM Plex Mono',monospace; }
   .mobile-nav-button .mobile-icon { font:20px/1.05 system-ui,sans-serif; }
   .mobile-nav-button.active { color:#b4eeff; background:#17374a; border-color:#34627b; }
   .archive-mode .mobile-nav-button.mode-live-only { display:none!important; }
-  .archive-mode .mobile-nav { grid-template-columns:repeat(5,minmax(0,1fr)); }
+  .archive-mode .mobile-nav { grid-template-columns:repeat(6,minmax(0,1fr)); }
   .release-backdrop { z-index:100; }
   .toast { bottom:calc(79px + env(safe-area-inset-bottom,0px)); left:10px; right:10px; max-width:calc(100vw - 20px); }
   .modal-backdrop { z-index:60; }

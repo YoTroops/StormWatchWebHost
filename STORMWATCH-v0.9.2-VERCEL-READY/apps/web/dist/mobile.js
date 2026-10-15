@@ -15,6 +15,15 @@ for(const [id,icon,label] of destinations){
  button.dataset.panel=id;button.setAttribute('aria-label',label==='INFO'?'Storm information':label);
  button.innerHTML=`<span class="mobile-icon" aria-hidden="true">${icon}</span><span>${label}</span>`;nav.append(button);
 }
+// Use a real link for donations. It never changes map state or opens a panel.
+const support=document.createElement('a');
+support.className='mobile-nav-button mobile-support-link';
+support.href='https://buymeacoffee.com/stormwatchsite?new=1';
+support.target='_blank';
+support.rel='noopener noreferrer';
+support.setAttribute('aria-label','Support STORMWATCH with a donation (opens new tab)');
+support.innerHTML='<span class="mobile-icon" aria-hidden="true">♡</span><span>SUPPORT</span>';
+nav.append(support);
 app.append(nav);
 const scrim=document.createElement('div');scrim.className='mobile-scrim';scrim.setAttribute('aria-hidden','true');app.append(scrim);
 for(const [selector,title] of [['.leftsidebar','Close controls'],['.rightsidebar','Close storm information']]){

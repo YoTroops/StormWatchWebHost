@@ -1,6 +1,6 @@
 [project]
 name = "stormwatch"
-version = "0.9.7"
+version = "0.9.9"
 requires-python = ">=3.12,<3.15"
 dependencies = [
   "fastapi>=0.115,<1",

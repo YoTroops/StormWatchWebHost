@@ -121,7 +121,7 @@ async def lifespan(app: FastAPI):
             try:await task
             except asyncio.CancelledError:pass
 
-app = FastAPI(title='STORMWATCH API', version='0.9.8', lifespan=lifespan,
+app = FastAPI(title='STORMWATCH API', version='0.9.9', lifespan=lifespan,
               description='Research visualization only. Refer to official NHC/NWS advisories for decisions.')
 
 from .briefing import daily_brief
@@ -135,7 +135,7 @@ async def news_daily():
 @app.get('/api/health')
 async def health():
     return {'service':'STORMWATCH','status':'ok','utc':datetime.now(timezone.utc).isoformat(),
-      'network_probe':'not performed','version':'0.9.8','providers':provider.health,'poller':poll_state,'websocket_listeners':len(subscribers)}
+      'network_probe':'not performed','version':'0.9.9','providers':provider.health,'poller':poll_state,'websocket_listeners':len(subscribers)}
 
 @app.get('/api/storms/live')
 async def live():
@@ -225,7 +225,7 @@ async def radar_status():
                 'note':'No radar data verified. No simulated radar is shown.'}
 
 @app.get('/api/radar/image')
-async def radar_image(region: str=Query('gulf'), minutes_ago: int=Query(0)):
+async def radar_image(region: str=Query('conus'), minutes_ago: int=Query(0)):
     if region not in REGIONS or minutes_ago not in ALLOWED_OFFSETS:
         raise HTTPException(400,'Invalid radar region or time offset')
     try:

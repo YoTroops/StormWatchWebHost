@@ -44,3 +44,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
  .release-backdrop{padding:8px}.release-dialog{max-height:95dvh}
 }
 @media(max-width:365px){.top-actions .about-link{font-size:8px;padding:6px 4px}.brand strong{font-size:17px}}
+
+/* v0.9.9 — a quiet but visible way to support this independent project. */
+.top-actions .support-link { display:inline-flex;justify-content:center;align-items:center;gap:8px;min-height:34px;padding:7px 12px;border:1px solid #987549;background:#3d3329;color:#f5d5a6;text-decoration:none;font:700 10px 'IBM Plex Mono',monospace;letter-spacing:.055em;white-space:nowrap; }
+.top-actions .support-link:hover { background:#4c3c2b;border-color:#d1a46b;color:#fff1da; }
+.top-actions .support-link:focus-visible { outline:2px solid #e6a34a;outline-offset:3px; }
+@media(max-width:760px) { .top-actions .support-link {display:none;} .mobile-nav .mobile-support-link {text-decoration:none;color:#efc18b;border-top:2px solid #926d43;} .mobile-nav .mobile-support-link:hover,.mobile-nav .mobile-support-link:focus-visible {background:#3a3029;color:#ffe2b7;} }
