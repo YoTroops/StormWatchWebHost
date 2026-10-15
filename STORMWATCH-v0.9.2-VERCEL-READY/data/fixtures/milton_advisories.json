@@ -1,0 +1,18 @@
+{
+  "id": "AL142024", "name": "MILTON", "basin": "Atlantic", "year": 2024,
+  "dataset": "SELECTED_ADVISORY_SNAPSHOTS", "quality": "ARCHIVED",
+  "provider": "NOAA National Hurricane Center", "note": "Selected real NHC advisory snapshots. NOT a complete HURDAT2 best track; consecutive samples may be many hours apart. Advisory winds were issued in mph; kt values below are derived conversions.",
+  "source_url": "https://www.nhc.noaa.gov/archive/2024/al14/",
+  "points": [
+    {"time":"2024-10-07T09:00:00Z","lat":22.1,"lon":-92.6,"wind_mph":100,"pressure_hpa":972,"source_url":"https://www.nhc.noaa.gov/archive/2024/al14/al142024.public.008.shtml"},
+    {"time":"2024-10-07T21:00:00Z","lat":21.8,"lon":-90.8,"wind_mph":180,"pressure_hpa":905,"source_url":"https://www.nhc.noaa.gov/archive/2024/al14/al142024.public.011.shtml"},
+    {"time":"2024-10-08T00:00:00Z","lat":21.9,"lon":-90.4,"wind_mph":180,"pressure_hpa":897,"source_url":"https://www.nhc.noaa.gov/archive/2024/al14/al142024.public_a.011.shtml"},
+    {"time":"2024-10-08T03:00:00Z","lat":21.8,"lon":-89.9,"wind_mph":165,"pressure_hpa":914,"source_url":"https://www.nhc.noaa.gov/archive/2024/al14/al142024.public.012.shtml"},
+    {"time":"2024-10-08T06:00:00Z","lat":22.1,"lon":-89.2,"wind_mph":155,"pressure_hpa":924,"source_url":"https://www.nhc.noaa.gov/archive/2024/al14/al142024.public_a.012.shtml"},
+    {"time":"2024-10-08T09:00:00Z","lat":22.3,"lon":-88.9,"wind_mph":155,"pressure_hpa":924,"source_url":"https://www.nhc.noaa.gov/archive/2024/al14/al142024.public.013.shtml"},
+    {"time":"2024-10-08T18:00:00Z","lat":22.5,"lon":-88.2,"wind_mph":155,"pressure_hpa":923,"source_url":"https://www.nhc.noaa.gov/archive/2024/al14/al142024.public_a.014.shtml"},
+    {"time":"2024-10-09T09:00:00Z","lat":24.5,"lon":-85.4,"wind_mph":160,"pressure_hpa":907,"source_url":"https://www.nhc.noaa.gov/archive/2024/al14/al142024.public.017.shtml"},
+    {"time":"2024-10-10T00:30:00Z","lat":27.3,"lon":-82.6,"wind_mph":120,"pressure_hpa":954,"source_url":"https://www.nhc.noaa.gov/archive/2024/al14/al142024.update.10100030.shtml"},
+    {"time":"2024-10-10T09:00:00Z","lat":28.5,"lon":-80.5,"wind_mph":85,"pressure_hpa":976,"source_url":"https://www.nhc.noaa.gov/archive/2024/al14/al142024.public.021.shtml"}
+  ]
+}
