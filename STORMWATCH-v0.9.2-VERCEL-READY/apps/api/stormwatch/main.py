@@ -121,7 +121,7 @@ async def lifespan(app: FastAPI):
             try:await task
             except asyncio.CancelledError:pass
 
-app = FastAPI(title='STORMWATCH API', version='0.10.2', lifespan=lifespan,
+app = FastAPI(title='STORMWATCH API', version='0.10.4', lifespan=lifespan,
               description='Research visualization only. Refer to official NHC/NWS advisories for decisions.')
 
 from .briefing import daily_brief
@@ -258,7 +258,7 @@ async def news_daily():
 @app.get('/api/health')
 async def health():
     return {'service':'STORMWATCH','status':'ok','utc':datetime.now(timezone.utc).isoformat(),
-      'network_probe':'not performed','version':'0.10.3','providers':provider.health,'poller':poll_state,'websocket_listeners':len(subscribers)}
+      'network_probe':'not performed','version':'0.10.4','providers':provider.health,'poller':poll_state,'websocket_listeners':len(subscribers)}
 
 @app.get('/api/storms/live')
 async def live():

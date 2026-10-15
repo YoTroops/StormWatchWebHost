@@ -1,0 +1,7 @@
+# Tropical Briefing — v0.10.4
+
+Set `OPENAI_API_KEY` as a Vercel **Production** secret and redeploy. The API key is used server-side only. API web search is an additional billed capability; check your OpenAI API project billing and usage limits. Optional: `STORMWATCH_OPENAI_MODEL` sets the headline synthesis model and `STORMWATCH_OPENAI_SEARCH_MODEL` sets the fallback search model (both default to `gpt-4.1-mini`). The chosen search model must support the Responses API `web_search_preview` tool.
+
+The briefing first fetches 5 independent RSS feeds. When none yields dated headlines, it attempts the OpenAI web-search fallback. If web search fails, the page displays an actionable diagnostic rather than fabricated news. Web-search source URLs are labeled with *unverified publication date*; official warnings must be checked at NHC. No briefing is cached on failure, so retry works immediately. Valid results are cached within each serverless instance for the UTC day (not across instances).
+
+Troubleshooting: Visit `/api/news/daily` and inspect `summary_note`, `summary_status`, `summary_method`, and `feed_status`. HTTP 401 means incorrect API key; HTTP 429 means quota/rate limit/billing; HTTP 400 often means unsupported model/tool configuration. If all RSS providers are unreachable and web search also fails, the site cannot produce a reliably source-grounded briefing. Do not put API keys in frontend code.

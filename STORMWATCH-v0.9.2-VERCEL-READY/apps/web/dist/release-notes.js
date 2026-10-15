@@ -3,6 +3,7 @@
   'use strict';
   const STORAGE_KEY = 'stormwatch.releaseNotes.dismissedVersion';
   const RELEASES = [
+    {version:'0.10.4', date:'2026-10-15', title:'AI briefing recovery and tester thank-you', subtitle:'A sourced AI search fallback when RSS feeds fail, plus a personal note to everyone testing the site.', changes:[{icon:'◎',title:'Briefing fallback',description:'When news RSS feeds are unavailable, OpenAI can search for verified coverage and provide source links. Uncited results are not published.'},{icon:'◷',title:'More useful errors',description:'API authentication, quota, model access and timeouts now show distinct troubleshooting messages.'},{icon:'↗',title:'Feedback invitation',description:'The release dialog includes a message from the creator and a direct Send Feedback action.'}]},
     {version:'0.10.3', date:'2026-10-15', title:'Simpler workspace and briefing reliability', subtitle:'More room for storm monitoring, and a fix for the RSS feed parser.', changes:[{icon:'▤',title:'Focused navigation',description:'Live, Archive and Send Feedback stay visible. Briefing, About, Support, release notes, and source diagnostics now live under Menu.'},{icon:'◷',title:'Reliable feed parsing',description:'RSS and Atom feeds use the standard Python XML parser, avoiding an optional dependency absent from Vercel.'},{icon:'◎',title:'Source diagnostics',description:'Briefing now shows per-source availability when a news provider is unreachable.'}]},
     {version:'0.10.2', date:'2026-10-15', title:'Feedback for everyone', subtitle:'Anyone with the link can test STORMWATCH and send feedback directly.', changes:[{icon:'↗',title:'Send feedback',description:'Visible feedback button on desktop and mobile, with no signup or approval needed.'},{icon:'✉',title:'Direct delivery',description:'Bug reports and suggestions are sent to the STORMWATCH project inbox through the configured email provider.'}]},
     {version:'0.10.1', date:'2026-10-15', title:'Pre-release testing signup', subtitle:'Join the STORMWATCH test group and send feedback before public release.', changes:[{icon:'↗',title:'Tester signup',description:'New signup form collects an email address and optional testing interests, with consent and validation.'},{icon:'✉',title:'Private delivery',description:'Signup emails can be delivered securely through Resend when configured in Vercel. No secret API keys are exposed in the browser.'}]},
@@ -148,6 +149,7 @@
     if (focusTarget && focusTarget.isConnected && typeof focusTarget.focus === 'function') focusTarget.focus();
     else openButton.focus();
   }
+  document.getElementById('releaseFeedback')?.addEventListener('click', () => { hideReleaseNotes(); document.querySelector('[data-open-testers]')?.click(); });
   openButton.addEventListener('click', showReleaseNotes);
   closeButton.addEventListener('click', hideReleaseNotes);
   enterButton.addEventListener('click', hideReleaseNotes);
