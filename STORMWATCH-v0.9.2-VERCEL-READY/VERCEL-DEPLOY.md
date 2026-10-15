@@ -15,3 +15,5 @@ The root pyproject sets the entrypoint to `apps.api.stormwatch.main:app`; the Py
 Vercel limitation: WebSocket pushes and always-on background polling are disabled here. The browser checks data periodically instead. Serverless instances do not persist shared in-memory CSV uploads or caches reliably. If you need the original real-time socket updates or durable shared state, deploy the original FastAPI Docker app to an always-on host instead.
 
 Do not upload `.env` secrets or credentials to GitHub. This is a deployment adaptation, not a verified production deployment.
+
+Projection alignment: NOAA radar and mapped satellite exports are requested in EPSG:4326 with adjustAspectRatio=false and aspect-matched image dimensions. OSM EPSG:3857 tiles are individually transformed via inverse Web Mercator into the same viewport projection as storm markers. The NOAA STAR preview is not georeferenced and is never drawn as a map overlay.

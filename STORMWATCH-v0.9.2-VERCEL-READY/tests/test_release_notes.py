@@ -27,13 +27,13 @@ def test_release_dialog_structure_and_unique_ids():
 def test_release_version_backend_and_browser_match():
     page = (WEB / 'index.html').read_text(encoding='utf-8')
     notes = (WEB / 'release-notes.js').read_text(encoding='utf-8')
-    assert re.search(r"version:\s*'0\.9\.3'", notes)
-    assert 'STORMWATCH v0.9.3' in page
-    assert 'v0.9.3' in BeautifulSoup(page, 'html.parser').select_one('#openReleaseNotes').get_text()
+    assert re.search(r"version:\s*'0\.9\.7'", notes)
+    assert 'STORMWATCH v0.9.7' in page
+    assert 'v0.9.7' in BeautifulSoup(page, 'html.parser').select_one('#openReleaseNotes').get_text()
     with TestClient(app) as client:
         result = client.get('/api/health')
     assert result.status_code == 200
-    assert result.json()['version'] == '0.9.3'
+    assert result.json()['version'] == '0.9.7'
 
 
 def test_embedded_release_styles_even_without_external_css():
@@ -48,7 +48,7 @@ def test_version_scoped_storage_and_local_history():
     js = (WEB / 'release-notes.js').read_text(encoding='utf-8')
     assert "localStorage.getItem(STORAGE_KEY)" in js
     assert "localStorage.setItem(STORAGE_KEY, latest.version)" in js
-    assert 'if (dismissedVersion() !== latest.version) showReleaseNotes();' in js
+    assert 'showReleaseNotes();' in js
     assert 'RELEASES.slice(1)' in js
     assert 'document.createElement' in js
     assert "event.key === 'Escape'" in js

@@ -4,7 +4,7 @@ const $ = (id) => document.getElementById(id);
 const state = {
   mode:'LIVE',projection:'globe',center:[-80,22],zoom:1.02,
   layers:{markers:true,track:true,cone:true,recon:true,uas:true,grid:true,radar:true,aircraft:true,models:true},
-  detailEnabled:true,osmTiles:new Map(),osmQueue:[],osmActive:0,osmVisible:new Set(),osmTileErrors:0,osmZoom:3,detailLoaded:false,
+  detailEnabled:false,osmTiles:new Map(),osmQueue:[],osmActive:0,osmVisible:new Set(),osmTileErrors:0,osmZoom:3,detailLoaded:false,
   mappedSat:null,mappedSatImage:null,mappedSatLoading:false,mappedSatPending:false,mappedSatOpacity:.70,
   coasts:[],lands:[],storms:[],archives:[],selected:null,archive:null,live:null,
   recon:null,uas:null,forecast:null,models:null,modelsStorm:null,modelsLoading:false,modelsSerial:0,selectedModels:new Set(["nhc","hafsa","hafsb","gfs","ecmwf","google","aifs"]),modelMetric:"wind_kt",step:0,playing:false,playTimer:null,
@@ -480,7 +480,7 @@ function drawRadar(w,h){
  // Source export is EPSG:4326, with geographic coordinates linearly spaced in each axis.
  // Reproject image in small triangular mesh cells through the same globe/map projection
  // used for storm markers. No misleading stretched rectangular globe overlay.
- const nx=20,ny=14,dx=image.width/nx,dy=image.height/ny;
+ const nx=24,ny=18,dx=image.width/nx,dy=image.height/ny;
  const pos=(i,j)=>project(xmin+(xmax-xmin)*i/nx,ymax-(ymax-ymin)*j/ny,w,h);
  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
   const a=pos(i,j),b=pos(i+1,j),c=pos(i,j+1),d=pos(i+1,j+1);
@@ -494,7 +494,7 @@ function drawRadar(w,h){
 }
 // OSM raster street cartography. Browser requests only viewport tiles (not prefetch),
 // uses HTTP cache, keeps attribution visible and does not download offline packs.
-const TILE_SIZE=256, TILE_CAP=36, TILE_CACHE_CAP=170;
+const TILE_SIZE=256, TILE_CAP=28, TILE_CACHE_CAP=100;
 const tileLon=(x,z)=>x/Math.pow(2,z)*360-180;
 const tileLat=(y,z)=>Math.atan(Math.sinh(Math.PI*(1-2*y/Math.pow(2,z))))/rad;
 function tileZoom(w,h){
@@ -610,7 +610,7 @@ async function loadMappedSatellite(){
   status.textContent=`UNAVAILABLE: ${e.message}. No satellite simulation shown.`;status.classList.add('unavailable');render();
  }finally{state.mappedSatLoading=false;if(state.mappedSatPending){state.mappedSatPending=false;loadMappedSatellite()}}
 }
-function render(){const rect=canvas.getBoundingClientRect(),w=rect.width,h=rect.height;if(!w||!h)return;const dpr=Math.min(window.devicePixelRatio||1,2);
+function render(){const rect=canvas.getBoundingClientRect(),w=rect.width,h=rect.height;if(!w||!h)return;const dpr=Math.min(window.devicePixelRatio||1,window.innerWidth<800?1.5:2);
  if(canvas.width!==Math.floor(w*dpr)||canvas.height!==Math.floor(h*dpr)){canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr)}
  ctx.setTransform(dpr,0,0,dpr,0,0);state.drawHits=[];
  globeBackground(w,h);drawLand(w,h);drawMappedSatellite(w,h);drawStreetTiles(w,h);drawGrid(w,h);drawRadar(w,h);drawForecast(w,h);drawModels(w,h);drawTrack(w,h);drawRecon(w,h);drawUas(w,h);drawAircraft(w,h);
@@ -636,14 +636,14 @@ canvas.addEventListener('pointermove',e=>{
  else if(localHit?.kind==='live'){const p=state.storms.find(s=>s.id===localHit.id);if(p)$('mouseCoordinates').textContent=coords(p.lat,p.lon)}
  else $('mouseCoordinates').textContent='DRAG / ZOOM / SELECT';
  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;
- state.center=[((drag.clon-dx/Math.max(200,rect.width)*110/state.zoom+540)%360)-180,Math.max(-78,Math.min(78,drag.clat+dy/Math.max(200,rect.height)*85/state.zoom))];render()}
+ state.center=[((drag.clon-dx/Math.max(200,rect.width)*110/state.zoom+540)%360)-180,Math.max(-78,Math.min(78,drag.clat+dy/Math.max(200,rect.height)*85/state.zoom))];scheduleMapRender()}
 });
 canvas.addEventListener('pointerup',e=>{if(!drag)return;const rect=canvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;if(!drag.moved){const nearest=state.drawHits.map(h=>({...h,dist:Math.hypot(h.x-x,h.y-y)})).sort((a,b)=>a.dist-b.dist)[0];if(nearest&&nearest.dist<=nearest.r)showHit(nearest);else $('mapInfo').hidden=true}drag=null});
-canvas.addEventListener('wheel',e=>{e.preventDefault();state.zoom=Math.max(.55,Math.min(95,state.zoom*(e.deltaY>0?.90:1.10)));render()},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault();state.zoom=Math.max(.55,Math.min(95,state.zoom*(e.deltaY>0?.90:1.10)));scheduleMapRender()},{passive:false});
 canvas.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'){state.center[0]-=5;render()}else if(e.key==='ArrowRight'){state.center[0]+=5;render()}else if(e.key==='+'||e.key==='='){state.zoom=Math.min(95,state.zoom*1.15);render()}});
 $('detailedMapToggle').onclick=()=>{state.detailEnabled=!state.detailEnabled;
  $('detailedMapToggle').textContent=state.detailEnabled?'◈ DETAIL ON':'◇ DETAIL OFF';
- $('detailedMapToggle').classList.toggle('active',state.detailEnabled);render()};
+ $('detailedMapToggle').classList.toggle('active',state.detailEnabled);if(!state.detailEnabled){state.osmQueue.length=0;state.osmVisible.clear();}scheduleMapRender()};
 $('mappedSatEnabled').onchange=()=>{if($('mappedSatEnabled').checked)loadMappedSatellite();else{state.mappedSatImage=null;$('mappedSatStatus').textContent='OFF';render();}};
 $('mappedSatChannel').onchange=()=>{state.mappedSatImage=null;if($('mappedSatEnabled').checked)loadMappedSatellite();else render()};
 $('mappedSatRegion').onchange=()=>{state.mappedSatImage=null;if($('mappedSatEnabled').checked)loadMappedSatellite();else render()};
@@ -692,13 +692,15 @@ $('timelineRange').oninput=e=>seek(Number(e.target.value));$('playPause').onclic
 $('reconButton').onclick=()=>loadRecon(false);$('reconLiveButton').onclick=()=>loadRecon(true);$('uasFile').onchange=e=>onUasFile(e.target.files[0]);
 $('sourceStatusButton').onclick=async()=>{$('modalBackdrop').classList.remove('hidden');try{const d=await api('/api/health');$('modalBody').innerHTML=`<p style="font-size:12px;color:#b9d4e8">Provider freshness and failures are tracked separately. A server health check does not verify NOAA connectivity.</p><pre class="modal-pre">${esc(JSON.stringify(d,null,2))}</pre><button class="detail-btn" id="refreshSources">↻ REFRESH LIVE FEED</button><button class="detail-btn" id="refreshHURDAT">↓ SYNC NHC ARCHIVE</button>`;$('refreshSources').onclick=()=>{loadLive();$('modalBackdrop').classList.add('hidden')};$('refreshHURDAT').onclick=()=>{loadArchives(true);$('modalBackdrop').classList.add('hidden')};}catch(e){$('modalBody').textContent=e.message}};
 $('closeModal').onclick=()=>$('modalBackdrop').classList.add('hidden');$('modalBackdrop').onclick=e=>{if(e.target===$('modalBackdrop'))$('modalBackdrop').classList.add('hidden')};
-window.addEventListener('resize',()=>{render();drawModelChart()});if(window.ResizeObserver)new ResizeObserver(()=>{render();drawModelChart()}).observe($('mapArea'));
+let layoutChartTimer;const layoutUpdate=()=>{scheduleMapRender();clearTimeout(layoutChartTimer);layoutChartTimer=setTimeout(drawModelChart,150)};window.addEventListener('resize',layoutUpdate);if(window.ResizeObserver)new ResizeObserver(layoutUpdate).observe($('mapArea'));
 setInterval(()=>{$('utcClock').textContent=new Date().toISOString().slice(11,19)+' UTC'},1000);
-setInterval(()=>{loadLive();if(state.mode==='LIVE'){if(state.selected)loadModels(state.selected.id);loadSatellite();if(state.layers.radar)loadRadar();if($('mappedSatEnabled').checked)loadMappedSatellite();loadAircraft();}loadReconStatus()},300000);
+setInterval(()=>{if(document.hidden)return;loadLive();if(state.mode==='LIVE'){if(state.selected)loadModels(state.selected.id);loadSatellite();if(state.layers.radar)loadRadar();if($('mappedSatEnabled').checked)loadMappedSatellite();loadAircraft();}loadReconStatus()},300000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){loadLive();if(state.mode==='LIVE'){if(state.selected)loadModels(state.selected.id);loadSatellite();if(state.layers.radar)loadRadar();if($('mappedSatEnabled').checked)loadMappedSatellite();loadAircraft();}loadReconStatus()}});
 async function init(){
  try{const r=await Promise.all([fetch('/static/coastlines.json'),fetch('/static/landpolygons.json')]);state.coasts=await r[0].json();state.lands=await r[1].json()}catch(e){notify('Offline cartography assets unavailable')}
- render();await loadArchives();loadLive();loadSatellite();loadRadar();loadAircraft();loadReconStatus();
+ render();loadLive();loadArchives();
+ // Nonessential imagery and reconnaissance requests start after the first map frame.
+ setTimeout(()=>{if(document.hidden)return;loadSatellite();if(state.layers.radar)loadRadar();loadAircraft();loadReconStatus()},900);
  // WebSocket is a service heartbeat, not evidence that NHC/ADS-B data is live.
  let retry=3000;
  const connect=()=>{let ws;try{ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');ws.onopen=()=>{retry=3000};ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.event==='source_update'){if(msg.source==='NHC')loadLive();if(msg.source==='SATELLITE'){loadSatellite();if(state.mode==='LIVE'&&$('mappedSatEnabled').checked)loadMappedSatellite();}if(msg.source==='RADAR'&&state.mode==='LIVE'&&state.layers.radar)loadRadar();if(msg.source==='AIRCRAFT'&&state.mode==='LIVE')loadAircraft();if(msg.source==='RECON')loadReconStatus()}}catch(err){}};ws.onerror=()=>ws.close();ws.onclose=()=>{setTimeout(connect,retry);retry=Math.min(retry*2,60000)};}catch(e){setTimeout(connect,retry)}};connect();

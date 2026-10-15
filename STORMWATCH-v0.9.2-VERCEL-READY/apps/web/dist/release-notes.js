@@ -3,6 +3,17 @@
   'use strict';
   const STORAGE_KEY = 'stormwatch.releaseNotes.dismissedVersion';
   const RELEASES = [
+    {version:'0.9.7', date:'2026-10-15', title:'Daily tropical news briefing', subtitle:'Source-linked tropical news with an optional daily AI summary, available from the top navigation.', changes:[{icon:'▤',title:'Tropical Briefing',description:'A dedicated page collects recent cyclone and hurricane research headlines, linking every item to its source.'},{icon:'◎',title:'Optional AI synthesis',description:'An OpenAI-backed summary is available after the site owner configures OPENAI_API_KEY in Vercel; the secret stays on the server.'},{icon:'◷',title:'Daily caching',description:'Briefing is calculated per UTC day when accessed; production persistence requires external storage.'}]},
+    {
+      version:'0.9.5', date:'2026-10-15', title:'Map performance hotfix',
+      subtitle:'Faster startup with offline coastline detail by default, smoother map interaction, and fewer background requests.',
+      changes:[
+        {icon:'◇',title:'Detail off at launch',description:'The map initially uses bundled coastlines without requesting OpenStreetMap tiles. Switch Detail On anytime for roads and town labels.'},
+        {icon:'⌖',title:'Smoother movement',description:'Map dragging and wheel zoom schedule canvas updates once per animation frame instead of painting repeatedly per input event.'},
+        {icon:'◷',title:'Lighter background activity',description:'Auxiliary data requests are deferred briefly at startup, and periodic refreshes pause while the tab is hidden.'},
+        {icon:'▤',title:'Mobile rendering optimization',description:'Caps high-density canvas scaling on smaller screens and reduces stored map-tile memory.'}
+      ]
+    },
     {
       version:'0.9.4', date:'2026-10-15', title:'Operations console refinement & About page',
       subtitle:'A focused storm monitoring workspace, creator profile, and release notes visible whenever the site opens.',

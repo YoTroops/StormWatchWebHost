@@ -47,8 +47,15 @@ def image_url(layer_id: int, region: str) -> str:
     if region not in REGIONS: raise ValueError('Unknown satellite map region')
     if not isinstance(layer_id,int) or layer_id<0 or layer_id>10000:
         raise ValueError('Invalid NOAA satellite layer ID')
-    params={'bbox':','.join(str(x) for x in REGIONS[region]['bbox']),
-            'bboxSR':'4326','imageSR':'4326','size':'960,660',
+    bbox = REGIONS[region]['bbox']
+    # ArcGIS defaults to adjustAspectRatio=true and can expand the requested
+    # geographic footprint if a fixed pixel aspect ratio differs. Ensure the
+    # exported image exactly corresponds to the coordinates used by the client.
+    height = 600
+    width = round(height * (bbox[2] - bbox[0]) / (bbox[3] - bbox[1]))
+    params={'bbox':','.join(str(x) for x in bbox),
+            'bboxSR':'4326','imageSR':'4326','adjustAspectRatio':'false',
+            'size':f'{width},{height}',
             'format':'png32','transparent':'true',
             'layers':f'show:{layer_id}','f':'image'}
     return BASE+'/export?'+urlencode(params)

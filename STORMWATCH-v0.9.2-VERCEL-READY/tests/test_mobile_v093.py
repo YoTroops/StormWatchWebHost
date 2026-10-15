@@ -37,4 +37,4 @@ def test_static_assets_served_by_backend():
             result=client.get('/static/'+asset)
             assert result.status_code==200
             assert len(result.content)>1000
-        assert client.get('/api/health').json()['version']=='0.9.3'
+        assert client.get('/api/health').json()['version']=='0.9.7'
