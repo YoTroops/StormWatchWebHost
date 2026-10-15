@@ -110,7 +110,7 @@ async def _background_poll():
 async def lifespan(app: FastAPI):
     log.info('STORMWATCH startup; static files %s', DIST)
     task=None
-    if os.getenv('STORMWATCH_BACKGROUND_POLL','0' if os.getenv('VERCEL') else '1') != '0':
+    if os.getenv('STORMWATCH_BACKGROUND_POLL','1') != '0':
         poll_state['interval_seconds']=max(120,min(1800,int(os.getenv('STORMWATCH_POLL_SECONDS','300'))))
         task=asyncio.create_task(_background_poll())
     try:
@@ -121,13 +121,13 @@ async def lifespan(app: FastAPI):
             try:await task
             except asyncio.CancelledError:pass
 
-app = FastAPI(title='STORMWATCH API', version='0.9.2', lifespan=lifespan,
+app = FastAPI(title='STORMWATCH API', version='0.9.3', lifespan=lifespan,
               description='Research visualization only. Refer to official NHC/NWS advisories for decisions.')
 
 @app.get('/api/health')
 async def health():
     return {'service':'STORMWATCH','status':'ok','utc':datetime.now(timezone.utc).isoformat(),
-      'network_probe':'not performed','version':'0.9.2','providers':provider.health,'poller':poll_state,'websocket_listeners':len(subscribers)}
+      'network_probe':'not performed','version':'0.9.3','providers':provider.health,'poller':poll_state,'websocket_listeners':len(subscribers)}
 
 @app.get('/api/storms/live')
 async def live():

@@ -1,0 +1,46 @@
+/* STORMWATCH v0.9.4 — meteorological operations console */
+:root{--bg:#0c151d;--panel:#111e28;--panel2:#172631;--border:#334550;--text:#e6ebec;--muted:#9aafb9;--cyan:#8dc5d0;--blue:#91b9ce;--amber:#e6a34a;--green:#83c7ad;--red:#e47e74}
+body{background:var(--bg);color:var(--text)}
+.topbar{background:#111e28;border-bottom:1px solid #42535c;gap:14px}
+.brand strong{letter-spacing:.06em;color:#f0f2f1}.brand strong span{color:#e6a34a}
+.brand small{color:#a0b2b8;letter-spacing:.045em}
+.brand-icon svg circle:first-child{stroke:#98b6bd}.brand-icon svg path{stroke:#c4d6d9}
+.top-mid{color:#bac8cb;letter-spacing:.04em}
+.top-actions{gap:6px}.top-actions .about-link{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:7px 11px;border:1px solid #3e515b;color:#cbd7da;background:#162732;font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.055em;text-decoration:none}.top-actions .about-link:hover{background:#243947;color:#fff}
+.seg,.icon-button,.mini{border-color:#3b505c;color:#c1d0d5;background:#172733}.seg.active{color:#f2d5a8;background:#3b3027;border-color:#aa7c45}
+.workarea{grid-template-columns:302px minmax(360px,1fr) 315px}
+.leftsidebar,.rightsidebar{background:#111e28;border-color:#344650}
+.panel-heading{background:#192934;border-color:#344650;color:#d3dee0}
+.workspace-nav{background:#14232e;border-color:#344650;gap:0;padding:0}
+.workspace-tab{border:0;border-right:1px solid #344650;border-radius:0;min-height:62px;color:#a1b7c0}
+.workspace-tab.active,.workspace-tab[aria-selected="true"]{color:#f1e0c6;background:#2b3438;box-shadow:inset 0 -3px 0 #e6a34a;border-color:#344650}
+.workspace-tab:hover{background:#243640;color:#fff}
+.workspace-title{color:#e3eaeb;border-color:#3b4d55;font-size:12px;letter-spacing:.07em}
+.module-intro,.empty-list{color:#a4b7bd;font-size:12px}
+.section-label{color:#c4d2d6}.inputbox{background:#111e28;border-color:#41535e}
+.storm-list{gap:0}.storm-item{border:0;border-bottom:1px solid #344650;border-radius:0;background:transparent;padding:14px 12px}.storm-item:hover{background:#22343e}.storm-item.selected{border-color:#42515a;background:#2c3435}.storm-item.selected:before{background:#e6a34a;top:0;bottom:0;border-radius:0}
+.storm-symbol,.layer-symbol.cyan,.action-icon{color:#b6d8dc}
+.storm-name{font-size:16px}.storm-details{color:#a1b3b9}
+.side-content,.inspector-scroll{scrollbar-color:#566873 transparent}
+.map-main{background:#0c1720}.map-toolbar{background:#172631;border-bottom:1px solid #354a55}
+.sidebar-footer{border-color:#344650;color:#8fa6ae}
+.release-dialog{background:#14222c;border:1px solid #687983;border-radius:4px;box-shadow:0 28px 80px #000a}
+.release-header,.release-footer{background:#1b2a33;border-color:#44555f}
+.release-hero h2 span{color:#e6a34a}.release-release-tag{color:#eac28e;border-color:#876640;background:#372d26}
+.release-change{background:#1c2c35;border:0;border-left:2px solid #b28a58;border-radius:0}.release-change-icon{background:#2e3f46;border-color:#475d65;border-radius:2px;color:#e3c49d}
+.release-enter{background:#a66f32;border-color:#ca924e;color:#fff}.release-enter:hover{background:#bc8442}
+.release-history-list details{border-color:#485963;background:#182832}
+.release-status-dot{background:#83c7ad;box-shadow:none}
+button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #e6a34a;outline-offset:2px}
+@media(max-width:1100px) and (min-width:761px){.workarea{grid-template-columns:270px minmax(280px,1fr) 275px}.brand{min-width:215px}.brand small{display:none}.top-mid{font-size:9px}}
+@media(max-width:760px){
+ .topbar{background:#14242f}.brand strong{font-size:clamp(18px,5.4vw,23px)}
+ .top-actions{gap:3px}.top-actions .about-link{padding:6px 7px;font-size:9px;min-height:36px}
+ .top-actions .release-opener{background:#26343d;border-color:#576772}.top-actions .release-opener::before{color:#f1c58e}
+ .leftsidebar,.rightsidebar{background:#14242f;border-color:#51636b;border-radius:10px 10px 0 0}
+ .mobile-nav{background:#14242f;border-color:#4b5c64}.mobile-nav-button.active{color:#f5dfbf;background:#3a352f;border-color:#99744b}
+ .mobile-nav-button{color:#b0c3c9}
+ .map-toolbar{background:#172631}
+ .release-backdrop{padding:8px}.release-dialog{max-height:95dvh}
+}
+@media(max-width:365px){.top-actions .about-link{font-size:8px;padding:6px 4px}.brand strong{font-size:17px}}

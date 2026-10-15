@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\matts\Downloads\STORMWATCH-v0.9.2-ABOUT-US\.venv"
+VIRTUAL_ENV="C:\Users\matts\Downloads\STORMWATCH-v0.9.4-DESIGN-ABOUT\stormwatch\.venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

@@ -4,6 +4,25 @@
   const STORAGE_KEY = 'stormwatch.releaseNotes.dismissedVersion';
   const RELEASES = [
     {
+      version:'0.9.4', date:'2026-10-15', title:'Operations console refinement & About page',
+      subtitle:'A focused storm monitoring workspace, creator profile, and release notes visible whenever the site opens.',
+      changes:[
+        {icon:'◫',title:'Refined operational interface',description:'Updated navigation, panel hierarchy, typography, and map controls without changing data-provider behavior.'},
+        {icon:'◎',title:'About STORMWATCH',description:'Added a creator profile covering UAS studies, meteorology, and hurricane research using observations from tropical systems.'},
+        {icon:'↗',title:'What’s New at startup',description:'The release dialog now opens on every new page load and remains available from the header.'},
+        {icon:'▤',title:'Mobile layout preserved',description:'Retains map-first viewing and slide-up navigation from the v0.9.3 mobile update.'}
+      ]
+    },
+    {
+      version:'0.9.3', date:'2026-10-15', title:'Mobile operations layout',
+      subtitle:'Phone-first globe viewing, bottom navigation and touch-friendly storm intelligence.',
+      changes:[
+        {icon:'⌖', title:'Map-first mobile dashboard', description:'The globe fills the phone screen instead of being pushed below two columns of controls.'},
+        {icon:'▧', title:'Bottom navigation and slide-up workspaces', description:'Storms, models, weather, layers, reconnaissance and intelligence open only when needed.'},
+        {icon:'↔', title:'Touch controls and compact replay', description:'Larger buttons, pinch-to-zoom, horizontal map-toolbar scrolling, and a collapsible replay timeline.'}
+      ]
+    },
+    {
       version:'0.9.2', date:'2026-10-14', title:'Radar map alignment & freshness correction',
       subtitle:'Corrects radar geographic positioning and avoids showing stale echoes as current weather.',
       changes:[
@@ -127,5 +146,6 @@
     if (event.shiftKey && (i <= 0)) { event.preventDefault(); focusable[focusable.length - 1].focus(); }
     else if (!event.shiftKey && (i === focusable.length - 1 || i < 0)) { event.preventDefault(); focusable[0].focus(); }
   });
-  if (dismissedVersion() !== latest.version) showReleaseNotes();
+  // Product requirement: present changes at every new page load, regardless of prior dismissal.
+  showReleaseNotes();
 })();

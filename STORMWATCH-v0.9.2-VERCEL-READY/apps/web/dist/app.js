@@ -701,9 +701,6 @@ async function init(){
  render();await loadArchives();loadLive();loadSatellite();loadRadar();loadAircraft();loadReconStatus();
  // WebSocket is a service heartbeat, not evidence that NHC/ADS-B data is live.
  let retry=3000;
- const connect=()=>{let ws;try{ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');ws.onopen=()=>{retry=3000};ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.event==='source_update'){if(msg.source==='NHC')loadLive();if(msg.source==='SATELLITE'){loadSatellite();if(state.mode==='LIVE'&&$('mappedSatEnabled').checked)loadMappedSatellite();}if(msg.source==='RADAR'&&state.mode==='LIVE'&&state.layers.radar)loadRadar();if(msg.source==='AIRCRAFT'&&state.mode==='LIVE')loadAircraft();if(msg.source==='RECON')loadReconStatus()}}catch(err){}};ws.onerror=()=>ws.close();ws.onclose=()=>{setTimeout(connect,retry);retry=Math.min(retry*2,60000)};}catch(e){setTimeout(connect,retry)}};
- // Serverless hosting does not support persistent WebSocket connections.
- // Refresh supported data from the browser instead of reconnecting endlessly.
- setInterval(()=>{loadLive();loadSatellite();loadReconStatus();if(state.mode==='LIVE'){loadAircraft();if(state.layers.radar)loadRadar();}},300000);
+ const connect=()=>{let ws;try{ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');ws.onopen=()=>{retry=3000};ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.event==='source_update'){if(msg.source==='NHC')loadLive();if(msg.source==='SATELLITE'){loadSatellite();if(state.mode==='LIVE'&&$('mappedSatEnabled').checked)loadMappedSatellite();}if(msg.source==='RADAR'&&state.mode==='LIVE'&&state.layers.radar)loadRadar();if(msg.source==='AIRCRAFT'&&state.mode==='LIVE')loadAircraft();if(msg.source==='RECON')loadReconStatus()}}catch(err){}};ws.onerror=()=>ws.close();ws.onclose=()=>{setTimeout(connect,retry);retry=Math.min(retry*2,60000)};}catch(e){setTimeout(connect,retry)}};connect();
 }
 init();

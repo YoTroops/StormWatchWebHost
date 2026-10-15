@@ -1,7 +1,7 @@
 # STORMWATCH
 ## Hurricane Reconnaissance & Atmospheric Intelligence Platform
 
-**Version 0.9.2 — radar geographical alignment and stale-data safety fix, building on the v0.9.1 release-notes popup.** Runnable research MVP, not a complete implementation of the full project brief.
+**Version 0.9.3 — mobile map-first layout and phone usability fixes, preserving v0.9.2 radar corrections.** Runnable research MVP, not a complete implementation of the full project brief.
 
 STORMWATCH is a standalone, Windows-friendly FastAPI dashboard with an offline-capable interactive orthographic globe/2D map. It uses real NOAA/NHC datasets and distinguishes live advisories, forecasts, historical best tracks, archived advisory snapshots, and aircraft recon fixes. It never substitutes simulated storm positions when live sources are unreachable.
 
@@ -13,6 +13,16 @@ STORMWATCH is a standalone, Windows-friendly FastAPI dashboard with an offline-c
 ![STORMWATCH v0.9.1 release welcome dialog — isolated browser test](docs/stormwatch_v091_welcome_mock.png)
 *The v0.9.1 screenshot uses a fixture-backed UI test; it is not a live provider result.*
 
+### New in v0.9.3 — Mobile-first viewer
+
+On mobile screens up to 760 CSS pixels wide, STORMWATCH opens to the globe instead of stacking two sidebars above it. The bottom navigation offers **Map, Storms, Models, Weather, Layers, Recon, and Info**. Controls open in touch-friendly slide-up panels, dismissible with **Map**, the close button, or the shaded map background. Select a storm to return to the map. In ARCHIVE mode, live Weather and Models are hidden as before. The top map toolbar scrolls horizontally, and **Replay** opens or closes a compact timeline. One-finger dragging pans the map; two-finger pinching zooms it. The default orthographic zoom fits the globe to a narrow screen, while the desktop UI stays unchanged.
+
+On iPhone/Android, open the publicly hosted STORMWATCH URL; `http://127.0.0.1:8000` works only on the computer running the server, not on your phone. If using local Windows hosting, your phone and computer must be on the same local network and the server must be configured to listen on a suitable network interface, with network/firewall access permitted. Public hosting over HTTPS is preferred for sharing.
+
+**Validation:** layout and interactions were tested in isolated Chromium with mocked provider responses at 320, 375, 390, and 1440 pixel widths. This does not establish real-device Safari/Android compatibility or live NOAA connectivity.
+
+![STORMWATCH v0.9.3 mobile mock](docs/stormwatch_v093_mobile_mock.png)
+
 ### Start on Windows
 
 **Upgrading from an earlier version?** Stop the old black terminal with **Ctrl+C**, extract the new ZIP and replace the existing `stormwatch` folder/files; you may keep its `.venv` environment folder. Double-click `start-windows.bat` again, then in the browser press **Ctrl+Shift+R**. Make sure the old server is stopped first.
@@ -20,7 +30,7 @@ STORMWATCH is a standalone, Windows-friendly FastAPI dashboard with an offline-c
 1. Install **Python 3.11 or newer** from https://www.python.org/downloads/ and select **Add Python to PATH**; ensure the Python launcher (`py`) is available.
 2. Extract the ZIP to a normal folder, e.g. `C:\STORMWATCH`.
 3. Double-click **`start-windows.bat`**. The first run uses `pip` to install Python dependencies into `.venv` and therefore normally requires internet access. No Node.js or API tokens required.
-4. Open **http://127.0.0.1:8000** in a modern desktop browser (Chrome, Edge, Firefox). Use Ctrl+C in the terminal to stop the server.
+4. Open **http://127.0.0.1:8000** in Chrome, Edge, Firefox, or a modern mobile browser when hosted on a reachable website. Use Ctrl+C in the terminal to stop the server.
 5. To run Python tests from a command prompt: `set PYTHONPATH=%CD%\apps\api` then `.venv\Scripts\python.exe -m pip install pytest pytest-asyncio` then `.venv\Scripts\python.exe -m pytest -q`.
 
 **Docker option:** with Docker Desktop installed, run `docker compose up --build` and open http://127.0.0.1:8000. Docker Compose was supplied but could not be executed in the build environment; no claim of a verified Docker image is made.
