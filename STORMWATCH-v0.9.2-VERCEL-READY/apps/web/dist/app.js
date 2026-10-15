@@ -7,7 +7,7 @@ const state = {
   detailEnabled:false,osmTiles:new Map(),osmQueue:[],osmActive:0,osmVisible:new Set(),osmTileErrors:0,osmZoom:3,detailLoaded:false,
   mappedSat:null,mappedSatImage:null,mappedSatLoading:false,mappedSatPending:false,mappedSatOpacity:.70,
   coasts:[],lands:[],storms:[],archives:[],selected:null,archive:null,live:null,
-  recon:null,uas:null,forecast:null,models:null,modelsStorm:null,modelsLoading:false,modelsSerial:0,selectedModels:new Set(["nhc","hafsa","hafsb","gfs","ecmwf","google","aifs"]),modelMetric:"wind_kt",step:0,playing:false,playTimer:null,
+  recon:null,uas:null,forecast:null,models:null,modelsStorm:null,modelsLoading:false,modelsSerial:0,selectedModels:new Set(["nhc","hafsa","hafsb","gfs","ecmwf","google","aifs"]),modelMetric:"wind_kt",step:0,
   activePoints:[],hover:null,drawHits:[],sourceError:null,refreshInProgress:false,satellite:null,satelliteLoading:false,satellitePending:false,radar:null,radarImage:null,radarLoading:false,radarPending:false,radarOpacity:.66,radarRegion:"conus",reconStatus:null,aircraft:null,aircraftLoading:false,tealAircraft:[],tealLoading:false
 };
 let toastTimeout=null;
@@ -20,8 +20,26 @@ function notify(message){const t=$('toast');t.textContent=message;t.classList.ad
 async function api(path, options){const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),35000);try{const res=await fetch(path,{...options,signal:ctrl.signal});if(!res.ok){const t=await res.text();throw Error(`${res.status}: ${t.slice(0,180)}`)}return await res.json();}finally{clearTimeout(timer)}}
 function isoFmt(v,short=false){if(!v)return '—';const d=new Date(v);if(isNaN(+d))return String(v);return short?d.toLocaleString('en-US',{month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'UTC'})+'Z':d.toISOString().replace('T',' ').slice(0,16)+' UTC';}
 function coords(lat,lon){return `${Math.abs(lat).toFixed(2)}°${lat>=0?'N':'S'}  ${Math.abs(lon).toFixed(2)}°${lon>=0?'E':'W'}`}
+// Source time is NHC's advisory issue time, never the time this browser fetched the JSON.
+// Invalid / future timestamps must not be presented as fresh observations.
+function observationAge(timestamp, now=Date.now()){
+ if(!timestamp)return 'AGE UNKNOWN';
+ const parsed=Date.parse(timestamp);
+ if(!Number.isFinite(parsed)||parsed>now+5*60*1000)return 'AGE UNKNOWN';
+ const minutes=Math.max(0,Math.floor((now-parsed)/60000));
+ if(minutes<1)return 'JUST NOW';
+ if(minutes<60)return `${minutes} MIN AGO`;
+ const hours=Math.floor(minutes/60);
+ if(hours<48)return `${hours} HR AGO`;
+ return `${Math.floor(hours/24)} D AGO`;
+}
+function advisoryQuality(quality,timestamp){
+ const value=String(quality||'UNAVAILABLE').toUpperCase();
+ return ['DELAYED','STALE'].includes(value)?`${value} · ${observationAge(timestamp)}`:value;
+}
+
 function catLabel(p){return p.category?'CAT '+p.category:(p.classification || p.status || 'TROPICAL CYCLONE')}
-function qualityChip(v){const kind=['UNAVAILABLE','STALE'].includes(v)?'status-unavailable':v==='ARCHIVED'?'status-archive':'';return `<div class="inspector-status ${kind}">${esc(v||'UNAVAILABLE')}</div>`}
+function qualityChip(v,time){const kind=['UNAVAILABLE','STALE','DELAYED'].includes(v)?'status-unavailable':v==='ARCHIVED'?'status-archive':'';return `<div class="inspector-status ${kind}">${esc(advisoryQuality(v,time))}</div>`}
 function stat(label,value,unit='',hot=false){return `<div class="stat-card"><div class="stat-label">${esc(label)}</div><div class="stat-value ${hot?'hot':''}">${esc(value??'—')}<small>${esc(unit)}</small></div></div>`}
 function detail(k,v){return `<div class="detail-line"><span>${esc(k)}</span><span>${esc(v)}</span></div>`}
 function aSource(url,text='OPEN OFFICIAL NHC SOURCE ↗'){const x=safeLink(url);return x?`<a class="source-link" href="${esc(x)}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`:''}
@@ -48,7 +66,7 @@ function switchWorkspace(name){
 }
 
 function setMode(mode){
- stop();state.mode=mode;state.step=0;state.selected=null;state.forecast=null;state.models=null;state.modelsStorm=null;state.modelsSerial++;state.activePoints=[];
+ state.mode=mode;state.step=0;state.selected=null;state.forecast=null;state.models=null;state.modelsStorm=null;state.modelsSerial++;state.activePoints=[];
  $('archiveMode').classList.toggle('active',mode==='ARCHIVE');$('liveMode').classList.toggle('active',mode==='LIVE');
  document.body.classList.toggle('archive-mode', mode==='ARCHIVE');
  switchWorkspace('storms');
@@ -58,8 +76,7 @@ function setMode(mode){
  if(mode==='ARCHIVE'){state.mappedSatImage=null;$('mappedSatStatus').textContent='OFF IN ARCHIVE';}else if($('mappedSatEnabled').checked){loadMappedSatellite();}
  if(mode==='LIVE'&&!state.aircraft)loadAircraft();
  $('stormSectionName').textContent=mode==='LIVE'?'CURRENT NHC CYCLONES':'HISTORICAL CYCLONES';
- $('timelineHeading').textContent=mode==='LIVE'?'OBSERVATION TIMELINE':'HISTORICAL REPLAY';
- renderStorms();showEmptyInspector();refreshTimeline();render();
+ renderStorms();showEmptyInspector();render();
  if(mode==='LIVE'&&!state.live)loadLive();
 }
 function renderStorms(){
@@ -70,7 +87,7 @@ function renderStorms(){
  $('stormList').innerHTML=filtered.map(s=>{
    const selected=state.selected?.id===s.id;
    const hot=s.category>=3;
-   return `<button class="storm-item ${selected?'selected':''}" data-storm="${esc(s.id)}"><div class="storm-row"><div class="storm-main"><span class="storm-symbol">${state.mode==='LIVE'?'◉':'↺'}</span><div><div class="storm-name">${esc(s.name)}</div><div class="storm-type">${esc(s.id)} ${s.year?`· ${s.year}`:''}</div></div></div><span class="storm-category ${hot?'hot':''}">${esc(state.mode==='LIVE'?catLabel(s):s.dataset==='HURDAT2_BEST_TRACK'?'HURDAT2':'ADVISORY')}</span></div><div class="storm-details">${state.mode==='LIVE'?`${esc(s.wind_kt??'—')} KT · ${esc(s.quality)} · ${esc(s.basin)}`:`${esc(s.point_count)} verified positions · ${esc(s.basin)}`}</div></button>`
+   return `<button class="storm-item ${selected?'selected':''}" data-storm="${esc(s.id)}"><div class="storm-row"><div class="storm-main"><span class="storm-symbol">${state.mode==='LIVE'?'◉':'↺'}</span><div><div class="storm-name">${esc(s.name)}</div><div class="storm-type">${esc(s.id)} ${s.year?`· ${s.year}`:''}</div></div></div><span class="storm-category ${hot?'hot':''}">${esc(state.mode==='LIVE'?catLabel(s):s.dataset==='HURDAT2_BEST_TRACK'?'HURDAT2':'ADVISORY')}</span></div><div class="storm-details">${state.mode==='LIVE'?`${esc(s.wind_kt??'—')} KT · ${esc(advisoryQuality(s.quality,s.time))} · ${esc(s.basin)}`:`${esc(s.point_count)} verified positions · ${esc(s.basin)}`}</div></button>`
  }).join('');
  document.querySelectorAll('[data-storm]').forEach(el=>el.addEventListener('click',()=>selectStorm(el.dataset.storm)));
 }
@@ -128,7 +145,7 @@ function expandSatellite(){
  $('modalBackdrop').classList.remove('hidden');$('modalBody').innerHTML=`<img class="satellite-large" src="${esc(url)}" alt="NOAA GOES-19 CONUS satellite preview"/><p class="satellite-large-caption">${esc(d.channel_label)} · OBSERVED ${esc(isoFmt(d.observed_utc))} · ${esc(d.quality)}. NOAA/NESDIS STAR preview, not a map overlay.</p><a class="source-link" href="${esc(d.source_url)}" target="_blank" rel="noopener noreferrer">OFFICIAL NOAA/NESDIS IMAGE PAGE ↗</a>`;
 }
 async function selectStorm(id){
- stop();state.step=0;state.forecast=null;state.models=null;state.modelsStorm=null;state.modelsSerial++;renderModels();
+ state.step=0;state.forecast=null;state.models=null;state.modelsStorm=null;state.modelsSerial++;renderModels();
  const list=state.mode==='LIVE'?state.storms:state.archives;
  const selected=list.find(x=>x.id===id);if(!selected)return;
  state.selected={...selected};state.activePoints=[];
@@ -149,7 +166,7 @@ async function selectStorm(id){
      api('/api/storms/'+encodeURIComponent(selected.id)+'/forecast').then(data=>{if(state.selected?.id===id){state.forecast=data;render();}}).catch(e=>notify('Forecast overlay not available: '+e.message.slice(0,80)));
    }
  }
- renderStorms();refreshTimeline();renderInspector();render();
+ renderStorms();renderInspector();render();
 }
 function showEmptyInspector(){$('inspector').innerHTML='<div class="inspector-blank"><span class="radar-ring">◎</span><h3>Awaiting selection</h3><p>Choose a cyclone, aircraft observation, or research trajectory to inspect source-verified measurements.</p></div>';}
 function renderInspector(){
@@ -160,12 +177,21 @@ function renderInspector(){
   $('inspector').innerHTML=`<div class="inspector-eyebrow">${esc(label)}</div><div class="inspector-title">${esc(d.name)} <small style="font-size:14px;color:#698ba0">${esc(d.year)}</small></div><div class="inspector-sub">${esc(d.id)} · ${esc(d.basin)}</div>${qualityChip('ARCHIVED')}
   <div class="stat-grid">${stat('MAX SUSTAINED WIND',p.wind_kt,'kt',p.category>=3)}${stat('CENTRAL PRESSURE',p.pressure_hpa,'hPa')}${stat('CLASSIFICATION',catLabel(p),'')}${stat('TRACK POSITIONS',d.points.length,'pts')}</div>
   <div class="detail-heading">SELECTED OBSERVATION</div>${detail('Observed at',isoFmt(p.time))}${detail('Position',coords(p.lat,p.lon))}${detail('Record type',d.dataset==='HURDAT2_BEST_TRACK'?'Post-analysis best track':'Archived NHC advisory')}${detail('Wind status',p.wind_mph!=null?'Derived kt from advisory mph':'Official HURDAT2 kt')}${detail('Source',d.provider)}
-  ${aSource(p.source_url||d.source_url)}<div class="detail-heading">INTENSITY EVOLUTION</div><canvas id="intensityChart" class="mini-chart"></canvas><p class="inspector-note">${esc(d.note||'Observations retain original valid times and are not forecast tracks.')}</p><button id="syncArchive" class="detail-btn">↻ SYNC COMPLETE NHC HURDAT2 TRACKS</button>`;
-  $('syncArchive').addEventListener('click',()=>loadArchives(true));drawMiniChart(d.points,state.step,'wind_kt');
+  ${aSource(p.source_url||d.source_url)}
+  <div class="archive-observation-nav" aria-label="Historical observation navigation">
+    <button id="previousObservation" class="detail-btn" type="button" ${state.step===0?'disabled':''} aria-label="Previous observed position">← PREVIOUS</button>
+    <span class="archive-position-count" aria-live="polite">${state.step+1} / ${d.points.length} · ${esc(isoFmt(p.time,true))}</span>
+    <button id="nextObservation" class="detail-btn" type="button" ${state.step===d.points.length-1?'disabled':''} aria-label="Next observed position">NEXT →</button>
+  </div>
+  <div class="detail-heading">INTENSITY EVOLUTION</div><canvas id="intensityChart" class="mini-chart"></canvas><p class="inspector-note">${esc(d.note||'Observations retain original valid times and are not forecast tracks.')}</p><button id="syncArchive" class="detail-btn">↻ SYNC COMPLETE NHC HURDAT2 TRACKS</button>`;
+  $('syncArchive').addEventListener('click',()=>loadArchives(true));
+  $('previousObservation').addEventListener('click',()=>seek(state.step-1));
+  $('nextObservation').addEventListener('click',()=>seek(state.step+1));
+  drawMiniChart(d.points,state.step,'wind_kt');
  }else{
-  $('inspector').innerHTML=`<div class="inspector-eyebrow">NHC CURRENT TROPICAL CYCLONE</div><div class="inspector-title">${esc(s.name)}</div><div class="inspector-sub">${esc(s.id)} · ${esc(s.basin)}</div>${qualityChip(s.quality)}
+  $('inspector').innerHTML=`<div class="inspector-eyebrow">NHC CURRENT TROPICAL CYCLONE</div><div class="inspector-title">${esc(s.name)}</div><div class="inspector-sub">${esc(s.id)} · ${esc(s.basin)}</div>${qualityChip(s.quality,s.time)}
     <div class="stat-grid">${stat('MAX SUSTAINED WIND',s.wind_kt,'kt',s.category>=3)}${stat('MINIMUM PRESSURE',s.pressure_hpa,'hPa')}${stat('CLASSIFICATION',catLabel(s),'')}${stat('FORWARD SPEED',s.motion_mph,'mph')}</div>
-    <div class="detail-heading">LATEST OFFICIAL ADVISORY</div>${detail('Position',coords(s.lat,s.lon))}${detail('Advisory issued',isoFmt(s.time))}${detail('Motion heading',s.motion_deg!=null?s.motion_deg+'°':'—')}${detail('Data quality',s.quality)}${detail('Provider',s.provider)}
+    <div class="detail-heading">LATEST OFFICIAL ADVISORY</div>${detail('Position',coords(s.lat,s.lon))}${detail('Advisory issued',isoFmt(s.time))}${detail('Motion heading',s.motion_deg!=null?s.motion_deg+'°':'—')}${detail('Data quality',advisoryQuality(s.quality,s.time))}${detail('Provider',s.provider)}
     ${aSource(s.source_url)} ${aSource(s.forecast_url,'NHC FORECAST GRAPHICS ↗')}
     <p class="inspector-note">Forecast cone and track (when available) are separate official guidance layers, not observations.</p>`;
  }
@@ -177,19 +203,12 @@ function drawMiniChart(points,index,key){const cv=$('intensityChart');if(!cv)ret
  const [x,y]=xy(Math.max(0,Math.min(index,points.length-1)));c.fillStyle='#ffba71';c.beginPath();c.arc(x,y,5,0,Math.PI*2);c.fill();
  c.fillStyle='#aacadd';c.font='12px monospace';c.fillText(Math.round(max)+' kt',5,14);c.fillText(Math.round(min)+' kt',5,160);
 }
-function refreshTimeline(){
- const pts=state.mode==='ARCHIVE'?state.activePoints:[];
- const has=pts.length>0;const last=Math.max(0,pts.length-1);state.step=Math.min(state.step,last);
- $('timelineRange').max=last;$('timelineRange').value=state.step;$('timelineRange').disabled=!has;
- $('playPause').disabled=!has;$('skipBack').disabled=!has;$('skipForward').disabled=!has;
- $('timelinePoint').textContent=has?`POINT ${state.step+1} / ${pts.length}`:'NO REPLAY DATA';
- $('timelineTime').textContent=has?isoFmt(pts[state.step].time):state.mode==='LIVE'?'LATEST OFFICIAL ADVISORY':'—';
- $('timelineStart').textContent=has?isoFmt(pts[0].time,true):'START —';$('timelineEnd').textContent=has?isoFmt(pts[last].time,true):'END —';
+// Archive points remain selectable directly on the map and via inspector controls.
+function seek(index){
+ if(state.mode!=='ARCHIVE'||!state.activePoints.length)return;
+ state.step=Math.max(0,Math.min(index,state.activePoints.length-1));
+ renderInspector();render();
 }
-function seek(index){state.step=Math.max(0,Math.min(index,state.activePoints.length-1));refreshTimeline();renderInspector();render();}
-function stop(){state.playing=false;clearInterval(state.playTimer);state.playTimer=null;$('playPause').textContent='▶';}
-function play(){if(!state.activePoints.length)return;if(state.playing){stop();return}state.playing=true;$('playPause').textContent='Ⅱ';if(state.step===state.activePoints.length-1)state.step=0;
- state.playTimer=setInterval(()=>{if(state.step>=state.activePoints.length-1){stop();return}seek(state.step+1)},Number($('playbackSpeed').value));}
 function focusOn(lon,lat,zoom){state.center=[lon,lat];state.zoom=zoom;render();}
 function updateTelemetry(){
  const available=state.live?.availability==='AVAILABLE';
@@ -387,7 +406,7 @@ function drawTrack(w,h){
   if(state.layers.markers){pts.forEach((p,i)=>{const xy=project(p.lon,p.lat,w,h);if(!xy)return;if(i===state.step)dot(xy[0],xy[1],7,'#63f0eb',null,null,{kind:'track',index:i});else if(i<=state.step){ctx.fillStyle='#6fc9d7';ctx.beginPath();ctx.arc(xy[0],xy[1],2.8,0,Math.PI*2);ctx.fill();state.drawHits.push({x:xy[0],y:xy[1],r:8,kind:'track',index:i})}})}
  }
  if(state.mode==='LIVE'&&state.layers.markers){
-  for(const s of state.storms){const p=project(s.lon,s.lat,w,h);if(!p)continue;dot(p[0],p[1],s.id===state.selected?.id?8:6,s.category>=3?'#ffba78':'#53d6ee',s.name.toUpperCase(),`${s.wind_kt||'—'} KT / ${s.quality}`,{kind:'live',id:s.id});}
+  for(const s of state.storms){const p=project(s.lon,s.lat,w,h);if(!p)continue;dot(p[0],p[1],s.id===state.selected?.id?8:6,s.category>=3?'#ffba78':'#53d6ee',s.name.toUpperCase(),`${s.wind_kt??'—'} KT / ${advisoryQuality(s.quality,s.time)}`,{kind:'live',id:s.id});}
  }
 }
 function drawRecon(w,h){if(!state.layers.recon||!state.recon)return;
@@ -688,12 +707,12 @@ for(const el of document.querySelectorAll('[data-layer]'))el.addEventListener('c
 for(const el of document.querySelectorAll('[data-view]'))el.addEventListener('click',e=>{state.projection=e.currentTarget.dataset.view;document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b===e.currentTarget));render()});
 $('zoomIn').onclick=()=>{state.zoom=Math.min(95,state.zoom*1.2);render()};$('zoomOut').onclick=()=>{state.zoom=Math.max(.55,state.zoom/1.2);render()};
 $('resetView').onclick=()=>{state.center=[-80,22];state.zoom=1.02;render()};
-$('timelineRange').oninput=e=>seek(Number(e.target.value));$('playPause').onclick=play;$('skipBack').onclick=()=>seek(state.step-1);$('skipForward').onclick=()=>seek(state.step+1);$('playbackSpeed').onchange=()=>{if(state.playing){stop();play()}};
 $('reconButton').onclick=()=>loadRecon(false);$('reconLiveButton').onclick=()=>loadRecon(true);$('uasFile').onchange=e=>onUasFile(e.target.files[0]);
 $('sourceStatusButton').onclick=async()=>{$('modalBackdrop').classList.remove('hidden');try{const d=await api('/api/health');$('modalBody').innerHTML=`<p style="font-size:12px;color:#b9d4e8">Provider freshness and failures are tracked separately. A server health check does not verify NOAA connectivity.</p><pre class="modal-pre">${esc(JSON.stringify(d,null,2))}</pre><button class="detail-btn" id="refreshSources">↻ REFRESH LIVE FEED</button><button class="detail-btn" id="refreshHURDAT">↓ SYNC NHC ARCHIVE</button>`;$('refreshSources').onclick=()=>{loadLive();$('modalBackdrop').classList.add('hidden')};$('refreshHURDAT').onclick=()=>{loadArchives(true);$('modalBackdrop').classList.add('hidden')};}catch(e){$('modalBody').textContent=e.message}};
 $('closeModal').onclick=()=>$('modalBackdrop').classList.add('hidden');$('modalBackdrop').onclick=e=>{if(e.target===$('modalBackdrop'))$('modalBackdrop').classList.add('hidden')};
 let layoutChartTimer;const layoutUpdate=()=>{scheduleMapRender();clearTimeout(layoutChartTimer);layoutChartTimer=setTimeout(drawModelChart,150)};window.addEventListener('resize',layoutUpdate);if(window.ResizeObserver)new ResizeObserver(layoutUpdate).observe($('mapArea'));
 setInterval(()=>{$('utcClock').textContent=new Date().toISOString().slice(11,19)+' UTC'},1000);
+setInterval(()=>{if(document.hidden||state.mode!=='LIVE'||!state.storms.length)return;renderStorms();if(state.selected)renderInspector();scheduleMapRender()},60000);
 setInterval(()=>{if(document.hidden)return;loadLive();if(state.mode==='LIVE'){if(state.selected)loadModels(state.selected.id);loadSatellite();if(state.layers.radar)loadRadar();if($('mappedSatEnabled').checked)loadMappedSatellite();loadAircraft();}loadReconStatus()},300000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){loadLive();if(state.mode==='LIVE'){if(state.selected)loadModels(state.selected.id);loadSatellite();if(state.layers.radar)loadRadar();if($('mappedSatEnabled').checked)loadMappedSatellite();loadAircraft();}loadReconStatus()}});
 async function init(){

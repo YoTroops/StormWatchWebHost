@@ -1,4 +1,4 @@
-"""Regression coverage for v0.9.9 support links and CONUS radar defaults."""
+"""Regression coverage for v0.10.0 support links and CONUS radar defaults."""
 from pathlib import Path
 from bs4 import BeautifulSoup
 from fastapi.testclient import TestClient
@@ -45,7 +45,7 @@ def test_radar_ui_and_image_api_default_to_conus():
         parameters=response.json()['paths']['/api/radar/image']['get']['parameters']
         region=next(p for p in parameters if p['name']=='region')
         assert region['schema']['default']=='conus'
-        assert client.get('/api/health').json()['version']=='0.9.9'
+        assert client.get('/api/health').json()['version']=='0.10.0'
 
 def test_radar_bounds_unchanged():
     assert REGIONS['conus']['bbox']==[-125.,23.,-66.,50.]

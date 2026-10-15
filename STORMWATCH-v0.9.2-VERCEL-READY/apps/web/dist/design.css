@@ -50,3 +50,30 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
 .top-actions .support-link:hover { background:#4c3c2b;border-color:#d1a46b;color:#fff1da; }
 .top-actions .support-link:focus-visible { outline:2px solid #e6a34a;outline-offset:3px; }
 @media(max-width:760px) { .top-actions .support-link {display:none;} .mobile-nav .mobile-support-link {text-decoration:none;color:#efc18b;border-top:2px solid #926d43;} .mobile-nav .mobile-support-link:hover,.mobile-nav .mobile-support-link:focus-visible {background:#3a3029;color:#ffe2b7;} }
+
+/* v0.10.0 — compact historic point navigator (timeline removed). */
+.archive-observation-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 15px;padding:9px 0;border-top:1px solid #2a3b48;border-bottom:1px solid #2a3b48}
+.archive-observation-nav .detail-btn{margin:0;min-height:36px;padding:8px 9px;white-space:nowrap}
+.archive-observation-nav .detail-btn:disabled{opacity:.38;cursor:not-allowed}
+.archive-position-count{font:10px/1.5 'IBM Plex Mono',monospace;color:#adbfca;text-align:center}
+@media(max-width:760px){.archive-observation-nav .detail-btn{min-width:84px;min-height:44px}.archive-observation-nav{gap:4px}}
+
+/* v0.10.0 — compact mobile header: avoid overlapping nav labels at phone widths. */
+@media(max-width:760px){
+ .topbar{justify-content:space-between;padding-inline:8px;gap:3px}
+ .topbar .brand{flex:0 1 auto;min-width:0}
+ .topbar .brand strong{font-size:clamp(16px,4.6vw,19px);letter-spacing:.02em}
+ .top-actions{gap:2px;flex:0 0 auto}
+ .top-actions .about-link{width:29px;min-width:29px;height:34px;min-height:34px;padding:0;font-size:0;letter-spacing:0}
+ .top-actions .about-link[href="/news.html"]::before{content:"☷";font-size:19px;line-height:1}
+ .top-actions .about-link[href="/about.html"]::before{content:"ⓘ";font-size:17px;line-height:1}
+ .top-actions .seg{height:34px;padding:5px 5px;font-size:8px}
+ .top-actions .release-opener{width:29px;min-width:29px;height:34px;min-height:34px}
+ .top-actions #sourceStatusButton{display:none}
+}
+@media(max-width:360px){.topbar .brand strong{font-size:15px}.top-actions .about-link{width:26px;min-width:26px}.top-actions .seg{padding-inline:4px}}
+
+@media(max-width:760px){
+ .top-actions .support-link{display:none!important}
+ .top-actions .about-link{display:inline-flex;align-items:center;justify-content:center;flex:0 0 29px;text-decoration:none;border:1px solid #3d505e;background:#162733;color:#d4e0e3}
+}

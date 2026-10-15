@@ -203,3 +203,11 @@ The popup works without NOAA connectivity and needs no API key. If your browser 
 - The **NWS Radar** region selector now starts on **Continental US** (`conus`) in both the browser and the radar image API's default query parameter. The original Gulf, Southeast and Caribbean selections remain available.
 - Geographic radar raster bounds and the existing EPSG:4326 → map projection mapping were not changed. Selecting CONUS does not automatically recenter the whole map.
 - Includes the original Python/Vercel deployment files.
+
+
+## v0.10.0 — Timeline cleanup and NHC observation age
+
+- Removed fixed-bottom timeline and mobile replay toggle, so the map fills available workspace height.
+- Storm annotations and list rows show elapsed time for DELAYED or STALE advisories based on the official `time` field, not local retrieval timestamps. Invalid or future issue times display AGE UNKNOWN.
+- Historical tracks retain point selection by map click, with previous/next controls in the inspector.
+- Local advisory labels refresh every minute without issuing additional network requests.

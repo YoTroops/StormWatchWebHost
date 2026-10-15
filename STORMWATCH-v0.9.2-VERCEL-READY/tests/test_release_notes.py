@@ -27,13 +27,13 @@ def test_release_dialog_structure_and_unique_ids():
 def test_release_version_backend_and_browser_match():
     page = (WEB / 'index.html').read_text(encoding='utf-8')
     notes = (WEB / 'release-notes.js').read_text(encoding='utf-8')
-    assert re.search(r"version:\s*'0\.9\.9'", notes)
-    assert 'STORMWATCH v0.9.9' in page
-    assert 'v0.9.9' in BeautifulSoup(page, 'html.parser').select_one('#openReleaseNotes').get_text()
+    assert re.search(r"version:\s*'0\.10\.0'", notes)
+    assert 'STORMWATCH v0.10.0' in page
+    assert 'v0.10.0' in BeautifulSoup(page, 'html.parser').select_one('#openReleaseNotes').get_text()
     with TestClient(app) as client:
         result = client.get('/api/health')
     assert result.status_code == 200
-    assert result.json()['version'] == '0.9.9'
+    assert result.json()['version'] == '0.10.0'
 
 
 def test_embedded_release_styles_even_without_external_css():

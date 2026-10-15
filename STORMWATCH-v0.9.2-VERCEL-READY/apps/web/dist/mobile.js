@@ -32,9 +32,6 @@ for(const [selector,title] of [['.leftsidebar','Close controls'],['.rightsidebar
  const close=document.createElement('button');close.className='mobile-sheet-close';close.type='button';close.setAttribute('aria-label',title);close.textContent='×';
  heading.append(close);close.addEventListener('click',closePanels);
 }
-const replay=document.createElement('button');replay.type='button';replay.className='mini mobile-replay-toggle';replay.textContent='◷ REPLAY';
-replay.setAttribute('aria-label','Show or hide timeline');replay.setAttribute('aria-expanded','false');
-workarea.querySelector('.map-modes')?.prepend(replay);
 const setNavActive=(id)=>{
  for(const button of nav.querySelectorAll('.mobile-nav-button')){
   const active=button.dataset.panel===id;
@@ -43,12 +40,10 @@ const setNavActive=(id)=>{
  }
 };
 function closePanels(){body.classList.remove('mobile-sheet-open');delete body.dataset.mobileSheet;setNavActive('map');}
-function hideReplay(){body.classList.remove('mobile-timeline-open');replay.classList.remove('active');replay.setAttribute('aria-expanded','false');}
 function openDestination(id){
  if(!mq.matches)return;
  if(id==='map'){closePanels();return;}
  if(['weather','models'].includes(id)&&body.classList.contains('archive-mode'))return;
- hideReplay();
  if(id==='info')body.dataset.mobileSheet='right';
  else{
   body.dataset.mobileSheet='left';
@@ -63,13 +58,12 @@ nav.addEventListener('click',e=>{
  openDestination(button.dataset.panel);
 });
 scrim.addEventListener('click',closePanels);
-replay.addEventListener('click',()=>{if(!mq.matches)return;closePanels();const on=body.classList.toggle('mobile-timeline-open');replay.classList.toggle('active',on);replay.setAttribute('aria-expanded',String(on));});
 workarea.querySelector('#stormList')?.addEventListener('click',e=>{if(e.target.closest('[data-storm]')&&mq.matches)requestAnimationFrame(closePanels)});
 for(const id of ['archiveMode','liveMode']){
- document.getElementById(id)?.addEventListener('click',()=>{closePanels();hideReplay();});
+ document.getElementById(id)?.addEventListener('click',()=>{closePanels();});
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mq.matches){if(body.classList.contains('mobile-sheet-open'))closePanels();else hideReplay();}});
-window.addEventListener('resize',()=>{if(!mq.matches){closePanels();hideReplay();}},{passive:true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mq.matches){if(body.classList.contains('mobile-sheet-open'))closePanels();}});
+window.addEventListener('resize',()=>{if(!mq.matches){closePanels();}},{passive:true});
 // A small mobile zoom convenience. Existing one-finger pan/tap stays delegated to app.js.
 // Suppress legacy single-finger panning events while a two-finger gesture is active.
 const canvas=document.getElementById('earthCanvas');

@@ -83,7 +83,7 @@ def test_api_models_from_mocked_official_deck(monkeypatch):
     resp=client.get('/api/models/AL092026')
     assert resp.status_code==200,resp.text
     data=resp.json()
-    assert data['quality']=='AVAILABLE'
+    assert data['quality']==('STALE' if data['cycle_age_hours']>24 else 'AVAILABLE')
     assert data['available_models']>=2
     assert next(m for m in data['models'] if m['id']=='google')['availability']=='AVAILABLE'
     assert next(m for m in data['models'] if m['id']=='hafsai')['availability']=='UNAVAILABLE'

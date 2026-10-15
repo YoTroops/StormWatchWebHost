@@ -12,8 +12,8 @@ def test_mobile_assets_embedded_and_loaded():
     css=(WEB/'mobile.css').read_text()
     js=(WEB/'mobile.js').read_text()
     assert '<meta name="viewport" content="width=device-width,initial-scale=1"/>' in page
-    assert '/static/mobile.css?v=099' in page
-    assert '/static/mobile.js?v=099' in page
+    assert '/static/mobile.css?v=0100' in page
+    assert '/static/mobile.js?v=0100' in page
     assert '.mobile-nav-button' in page
     assert css in page
     assert "document.createElement('nav')" in js
@@ -24,7 +24,7 @@ def test_original_controls_unchanged_and_mobile_archive_safe():
     html=BeautifulSoup((WEB/'index.html').read_text(),'html.parser')
     ids=[n['id'] for n in html.select('[id]')]
     assert len(ids)==len(set(ids))
-    for id_ in ('earthCanvas','archiveMode','liveMode','stormList','timeline','timelineRange','modelCycle','satelliteImage','radarRegion','inspector','releaseDialogBackdrop'):
+    for id_ in ('earthCanvas','archiveMode','liveMode','stormList','modelCycle','satelliteImage','radarRegion','inspector','releaseDialogBackdrop'):
         assert html.select_one('#'+id_) is not None or (id_=='timeline' and html.select_one('.timeline') is not None)
     css=(WEB/'mobile.css').read_text()
     assert '.archive-mode .mobile-nav-button.mode-live-only' in css
@@ -37,4 +37,4 @@ def test_static_assets_served_by_backend():
             result=client.get('/static/'+asset)
             assert result.status_code==200
             assert len(result.content)>1000
-        assert client.get('/api/health').json()['version']=='0.9.9'
+        assert client.get('/api/health').json()['version']=='0.10.0'
