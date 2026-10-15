@@ -3,3 +3,7 @@
 nav a.support-page-link {color:#f1c991;border:1px solid #86663f;padding:9px 12px;white-space:nowrap;}
 nav a.support-page-link:hover {background:#382e26;color:#ffe3b6;}
 @media(max-width:650px){nav{gap:12px}nav a.support-page-link{padding:8px 10px}}
+
+/* v0.10.3: briefing is an information page, not a billboard. */
+main{max-width:1000px;padding-top:46px}h1{font-size:clamp(42px,7vw,72px);letter-spacing:-.047em;margin:20px 0}.intro{font-size:16px;line-height:1.6;max-width:650px}.summary{padding:30px 0}.summary>p#summary{font-size:clamp(16px,2vw,20px);line-height:1.65}.feed-diagnostics{border-bottom:1px solid #334751;padding:12px 0;color:#9eb7c5;font-size:12px;line-height:1.7}.feed-diagnostics a{color:#e6a34a}.feed-diagnostics summary{cursor:pointer;color:#c6d7de}.feed-diagnostics ul{margin:8px 0;padding-left:18px}.feed-diagnostics li{margin:3px 0}.top nav{gap:15px}.top{padding-block:16px}
+@media(max-width:650px){main{padding-top:29px}h1{font-size:clamp(42px,11vw,58px)}}

@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Query, UploadFile, File, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from bs4 import BeautifulSoup
@@ -121,10 +121,133 @@ async def lifespan(app: FastAPI):
             try:await task
             except asyncio.CancelledError:pass
 
-app = FastAPI(title='STORMWATCH API', version='0.10.0', lifespan=lifespan,
+app = FastAPI(title='STORMWATCH API', version='0.10.2', lifespan=lifespan,
               description='Research visualization only. Refer to official NHC/NWS advisories for decisions.')
 
 from .briefing import daily_brief
+
+# Pre-public tester signup: deliver only by verified server-side email; do not log PII.
+from pydantic import BaseModel, Field
+import httpx
+import time
+from html import escape as html_escape
+
+class TesterSignup(BaseModel):
+    name: str = Field(default='', max_length=90)
+    email: str = Field(min_length=5, max_length=254)
+    interest: str = Field(default='', max_length=50)
+    feedback: str = Field(default='', max_length=600)
+    consent: bool = False
+    website: str = Field(default='', max_length=120)  # honeypot
+
+_signup_attempts = {}
+
+@app.post('/api/testers/signup')
+async def tester_signup(data: TesterSignup, request: Request):
+    # Same-origin submission; prevent other sites from posting to this form.
+    origin = request.headers.get('origin', '')
+    if origin and urlsplit(origin).netloc.lower() != request.headers.get('host', '').lower():
+        raise HTTPException(403, 'Signup must be submitted from STORMWATCH.')
+    if data.website:
+        return {'ok': True, 'message': 'Thank you for your interest.'}
+    if not data.consent:
+        raise HTTPException(422, 'Please agree to be contacted about testing.')
+    address = data.email.strip()
+    if not re.fullmatch(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,}", address):
+        raise HTTPException(422, 'Please enter a valid email address.')
+    key = os.getenv('RESEND_API_KEY', '').strip()
+    sender = os.getenv('TESTER_NOTIFICATION_FROM', '').strip()
+    if not key or not sender:
+        log.warning('Tester signup unavailable: email delivery is not configured')
+        raise HTTPException(503, 'Tester signup is temporarily unavailable. Please try again later.')
+    # Best effort throttling per instance; external rate limiting is recommended for production.
+    ip = request.headers.get('x-forwarded-for', '').split(',')[0].strip() or (request.client.host if request.client else 'unknown')
+    now = time.monotonic()
+    for old_ip, times in list(_signup_attempts.items()):
+        recent = [t for t in times if now-t < 3600]
+        if recent: _signup_attempts[old_ip] = recent
+        else: _signup_attempts.pop(old_ip, None)
+    recent = _signup_attempts.setdefault(ip, [])
+    if len(recent) >= 5:
+        raise HTTPException(429, 'Too many submissions. Please try again later.')
+    recent.append(now)
+    safe = lambda value: html_escape(value.strip(), quote=True)
+    html = ('<h2>STORMWATCH — New tester signup</h2>'
+        f'<p><b>Name:</b> {safe(data.name) or "Not provided"}</p>'
+        f'<p><b>Email:</b> {safe(address)}</p>'
+        f'<p><b>Main interest:</b> {safe(data.interest) or "Not specified"}</p>'
+        f'<p><b>Notes:</b> {safe(data.feedback) or "None"}</p>'
+        '<p><small>Applicant agreed to be contacted about STORMWATCH pre-release testing.</small></p>')
+    try:
+        async with httpx.AsyncClient(timeout=9) as client:
+            response = await client.post('https://api.resend.com/emails',
+                headers={'Authorization': f'Bearer {key}', 'Content-Type': 'application/json'},
+                json={'from': sender, 'to': ['mattsails07@gmail.com'],
+                      'subject': 'STORMWATCH — New pre-release tester',
+                      'html': html, 'reply_to': address})
+        response.raise_for_status()
+    except (httpx.HTTPError, ValueError):
+        log.warning('Tester signup mail provider failed (no applicant details logged)')
+        raise HTTPException(503, 'Could not deliver the form right now. Please try again later.')
+    return {'ok': True, 'message': 'Thanks! Your interest has been sent to the STORMWATCH team.'}
+
+
+# Public feedback: no account or signup required. Delivered by private server-side email.
+class FeedbackSubmission(BaseModel):
+    name: str = Field(default='', max_length=90)
+    email: str = Field(default='', max_length=254)
+    interest: str = Field(default='General feedback', max_length=60)
+    feedback: str = Field(min_length=1, max_length=2000)
+    page: str = Field(default='/', max_length=200)
+    website: str = Field(default='', max_length=120)
+    consent: bool = True
+
+@app.post('/api/feedback')
+async def submit_feedback(data: FeedbackSubmission, request: Request):
+    origin=request.headers.get('origin','')
+    if origin and urlsplit(origin).netloc.lower()!=request.headers.get('host','').lower():
+        raise HTTPException(403, 'Feedback must be submitted from STORMWATCH.')
+    if data.website:
+        return {'ok':True,'message':'Thanks for your feedback.'}
+    if not data.feedback.strip():
+        raise HTTPException(422,'Please enter your feedback before sending.')
+    address=data.email.strip()
+    if address and not re.fullmatch(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,}",address):
+        raise HTTPException(422,'Please enter a valid email address or leave it blank.')
+    key=os.getenv('RESEND_API_KEY','').strip()
+    sender=os.getenv('TESTER_NOTIFICATION_FROM','').strip() or os.getenv('FEEDBACK_NOTIFICATION_FROM','').strip()
+    if not key or not sender:
+        log.warning('Feedback delivery not configured')
+        raise HTTPException(503,'Feedback delivery is temporarily unavailable. Please try again later.')
+    ip=request.headers.get('x-forwarded-for','').split(',')[0].strip() or (request.client.host if request.client else 'unknown')
+    now=time.monotonic()
+    for old_ip,times in list(_signup_attempts.items()):
+        recent=[t for t in times if now-t < 3600]
+        if recent: _signup_attempts[old_ip]=recent
+        else: _signup_attempts.pop(old_ip,None)
+    recent=_signup_attempts.setdefault(ip,[])
+    if len(recent)>=5:
+        raise HTTPException(429,'Too many messages. Please try again later.')
+    recent.append(now)
+    safe=lambda v: html_escape(v.strip(),quote=True)
+    html=('<h2>STORMWATCH — Website feedback</h2>'
+          f'<p><b>Category:</b> {safe(data.interest)}</p>'
+          f'<p><b>Feedback:</b></p><p style="white-space:pre-wrap">{safe(data.feedback)}</p>'
+          f'<p><b>Name:</b> {safe(data.name) or "Anonymous"}</p>'
+          f'<p><b>Reply email:</b> {safe(address) or "Not provided"}</p>'
+          f'<p><b>Page:</b> {safe(data.page)}</p>')
+    payload={'from':sender,'to':['mattsails07@gmail.com'],
+             'subject':'STORMWATCH feedback — '+(data.interest or 'General feedback'),
+             'html':html}
+    if address: payload['reply_to']=address
+    try:
+        async with httpx.AsyncClient(timeout=9) as client:
+            response=await client.post('https://api.resend.com/emails',headers={'Authorization':f'Bearer {key}','Content-Type':'application/json'},json=payload)
+        response.raise_for_status()
+    except (httpx.HTTPError,ValueError):
+        log.warning('Feedback mail provider failed (no feedback contents logged)')
+        raise HTTPException(503,'Could not send feedback right now. Please try again later.')
+    return {'ok':True,'message':'Feedback sent. Thank you!'}
 
 @app.get('/api/news/daily')
 async def news_daily():
@@ -135,7 +258,7 @@ async def news_daily():
 @app.get('/api/health')
 async def health():
     return {'service':'STORMWATCH','status':'ok','utc':datetime.now(timezone.utc).isoformat(),
-      'network_probe':'not performed','version':'0.10.0','providers':provider.health,'poller':poll_state,'websocket_listeners':len(subscribers)}
+      'network_probe':'not performed','version':'0.10.3','providers':provider.health,'poller':poll_state,'websocket_listeners':len(subscribers)}
 
 @app.get('/api/storms/live')
 async def live():

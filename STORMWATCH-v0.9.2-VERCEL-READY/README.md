@@ -205,7 +205,7 @@ The popup works without NOAA connectivity and needs no API key. If your browser 
 - Includes the original Python/Vercel deployment files.
 
 
-## v0.10.0 — Timeline cleanup and NHC observation age
+## v0.10.1 — Timeline cleanup and NHC observation age
 
 - Removed fixed-bottom timeline and mobile replay toggle, so the map fills available workspace height.
 - Storm annotations and list rows show elapsed time for DELAYED or STALE advisories based on the official `time` field, not local retrieval timestamps. Invalid or future issue times display AGE UNKNOWN.

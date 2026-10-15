@@ -7,7 +7,7 @@ from email.utils import parsedate_to_datetime
 from html import unescape
 from urllib.parse import quote, urlparse
 import httpx
-from bs4 import BeautifulSoup
+import xml.etree.ElementTree as ET
 
 # Multiple independent feeds: no one publisher is required for the briefing.
 # Operational NHC feeds are official bulletins; other feeds are news/research.
@@ -23,33 +23,43 @@ _cache = {'day':None,'data':None}
 _lock=asyncio.Lock()
 
 def parse_feed(raw, channel, now=None, max_age_days=7):
-    """Parse RSS or Atom. Only accept HTTPS source links with dated entries."""
-    now=now or datetime.now(timezone.utc)
-    soup=BeautifulSoup(raw,'xml')
+    """Read RSS/Atom using stdlib XML (no optional lxml runtime dependency)."""
+    now = now or datetime.now(timezone.utc)
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError:
+        return []
+    def tagname(tag):
+        return tag.rsplit('}', 1)[-1].lower()
+    def field(node, names):
+        for child in node:
+            if tagname(child.tag) in names:
+                return child
+        return None
     items=[]
-    for el in soup.find_all(['item','entry'])[:45]:
-        title=el.find('title')
-        link=el.find('link')
-        published=el.find(['pubDate','published','updated','dc:date'])
-        if not title or not link or not published:continue
-        href=link.get('href') or link.get_text(' ',strip=True)
-        if urlparse(href).scheme!='https':continue
+    for el in root.iter():
+        if tagname(el.tag) not in ('item','entry'): continue
+        if len(items) >= 45: break
+        title=field(el,('title',)); link=field(el,('link',))
+        published=field(el,('pubdate','published','updated','date'))
+        if title is None or link is None or published is None: continue
+        href=(link.attrib.get('href') or ''.join(link.itertext())).strip()
+        if urlparse(href).scheme!='https': continue
         try:
-            stamp=published.get_text(' ',strip=True)
-            try:dt=parsedate_to_datetime(stamp)
-            except (TypeError,ValueError):dt=datetime.fromisoformat(stamp.replace('Z','+00:00'))
+            stamp=''.join(published.itertext()).strip()
+            try: dt=parsedate_to_datetime(stamp)
+            except (TypeError,ValueError): dt=datetime.fromisoformat(stamp.replace('Z','+00:00'))
             if dt.tzinfo is None:dt=dt.replace(tzinfo=timezone.utc)
             dt=dt.astimezone(timezone.utc)
         except (TypeError,ValueError,AttributeError):continue
         age=(now-dt).total_seconds()
         if age < -3600 or age > max_age_days*86400:continue
-        headline=re.sub(r'\s+',' ',unescape(title.get_text(' ',strip=True))).strip()[:200]
-        if not headline:continue
-        items.append({'title':headline,'url':href,'published_utc':dt.isoformat(),'channel':channel})
+        headline=re.sub(r'\s+',' ',unescape(''.join(title.itertext()))).strip()[:200]
+        if headline:items.append({'title':headline,'url':href,'published_utc':dt.isoformat(),'channel':channel})
     return items
 
 async def fetch_headlines(*, with_status=False):
-    async with httpx.AsyncClient(timeout=9,follow_redirects=True,max_redirects=3,headers={'User-Agent':'Mozilla/5.0 (compatible; STORMWATCH/0.9.8; tropical briefing)','Accept':'application/rss+xml, application/atom+xml, application/xml, text/xml, */*'}) as client:
+    async with httpx.AsyncClient(timeout=6,follow_redirects=True,max_redirects=3,headers={'User-Agent':'Mozilla/5.0 (compatible; STORMWATCH/0.9.8; tropical briefing)','Accept':'application/rss+xml, application/atom+xml, application/xml, text/xml, */*'}) as client:
         async def read(feed):
             channel,url,age=feed
             try:
@@ -57,9 +67,9 @@ async def fetch_headlines(*, with_status=False):
                 if len(r.content)>750_000:raise ValueError('Feed too large')
                 articles=parse_feed(r.content,channel,max_age_days=age)
                 return articles, {'source':channel,'status':'ok' if articles else 'no_recent_items','count':len(articles)}
-            except (httpx.HTTPError,ValueError) as exc:
+            except (httpx.HTTPError,ValueError,ET.ParseError) as exc:
                 # Expose a safe failure category, never credentials or external response content.
-                return [],{'source':channel,'status':'unreachable','count':0}
+                return [],{'source':channel,'status':'unreachable','count':0,'reason':('http_'+str(exc.response.status_code) if isinstance(exc,httpx.HTTPStatusError) else 'timeout' if isinstance(exc,httpx.TimeoutException) else 'network_or_parse')}
         batches=await asyncio.gather(*(read(f) for f in FEEDS))
     seen=set();out=[]
     for item in sorted((x for articles,_ in batches for x in articles),key=lambda r:r['published_utc'],reverse=True):
@@ -97,7 +107,7 @@ async def daily_brief():
         summary,error=await summarize(articles)
         source_state=('available' if articles else ('sources_unreachable' if all(x['status']=='unreachable' for x in source_status) else 'no_recent_items'))
         if not articles:error=('News feeds are temporarily unreachable.' if source_state=='sources_unreachable' else 'No recent dated items were available from reachable sources.')
-        result={'source_status':source_state,'feed_status':source_status,'date_utc':today,'generated_utc':datetime.now(timezone.utc).isoformat(),'summary':summary,'summary_status':'available' if summary else 'unavailable','summary_note':error,'headlines':articles,'source_note':'Recent dated headlines from Google News, NASA and official NHC feeds (up to 14 days for research). AI only analyzes supplied titles, not full articles. Consult original reporting and current NHC advisories.'}
+        result={'source_status':source_state,'feed_status':source_status,'date_utc':today,'generated_utc':datetime.now(timezone.utc).isoformat(),'summary':summary,'summary_status':'available' if summary else ('no_sources' if not articles else 'unavailable'),'summary_note':error,'headlines':articles,'source_note':'Recent dated headlines from Google News, NASA and official NHC feeds (up to 14 days for research). AI only analyzes supplied titles, not full articles. Consult original reporting and current NHC advisories.'}
         # Avoid caching transient failure for the entire day on serverless instances.
         if summary or (articles and not os.getenv('OPENAI_API_KEY')):_cache.update(day=today,data=result)
         return result
